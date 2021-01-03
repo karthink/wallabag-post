@@ -1,0 +1,21 @@
+#+TITLE: Wallabag.el
+#+AUTHOR: Karthik Chikmagalur
+
+Post a URL to Wallabag from within Emacs.
+
+This package provides a single function, ~wallabag-post-entry~, that posts a URL to a Wallabag instance from within Emacs. When called interactively it acts on the URL at point. 
+
+* Setup (with =use-package=)
+Set ~wallabag-credentials~ as in the following. You can also set ~wallabag-data-dir~ to where you want the API token for communicating with the Wallabag server to be stored. Note that the =:load-path= keyword is necessary if wallabag.el is not in your Emacs' path.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package wallabag
+    :load-path "~/path/to/wallabag"
+    :commands wallabag-post-entry
+    :config
+    (setq wallabag-data-dir "~/.cache/wallabag")
+    (setq wallabag-credentials
+          `((client-secret  . "abcd1234abcd1234abcd1234abcd1234")
+            (client-id      . "abcd1234abcd1234abcd1234abcd1234")
+            (host           . "mywallabagurl.com"))))
+#+END_SRC
