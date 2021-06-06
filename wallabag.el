@@ -142,28 +142,40 @@ with a new one that is created interactively."
 (defun wallabag--error-p (thing)
   (and (listp thing) (eq 'wallabag-error (car thing))))
 
+(defun wallabag--read-passwd (username host &optional confirm default)
+  "Read wallabag password from auth-source. Query the user if not found."
+  (let ((secret (plist-get (nth 0 (auth-source-search
+                                   :max 1
+                                   :host host
+                                   :user username))
+                           :secret)))
+    (cond
+     ((functionp secret) (funcall secret))
+     ((null secret) (read-passwd (format "Wallabag password for %s: " host)
+                                 confirm default))
+     (t secret))))
+
 (defun wallabag--create-wallabag-config (&optional host client-id client-secret username password)
   "Interactively construct the config parameters for the wallabag connection"
   (interactive)
   (let* ((config (append wallabag-credentials 
                          `((username . ,(read-string "Wallabag username: " username)))))
-         (password (read-passwd "Wallabag password: " password))
+         (host          (or host (alist-get 'host config)
+                            (read-string "Wallabag instance host: ")))
+         (client-id     (or client-id (alist-get 'client-id config)
+                            (read-string "Wallabag client-id: ")))
+         (client-secret (or client-secret (alist-get 'client-secret config)
+                            (read-string "Wallabag client-secret: ")))
+         (username      (or username (alist-get 'username config)))
+         (password (wallabag--read-passwd username host password))
          (token (wallabag--retrieve-and-store-wallabag-token
-                 (alist-get 'host config)
-                 (alist-get 'client-id config)
-                 (alist-get 'client-secret config)
-                 (alist-get 'username config)
-                 password)))
+                 host client-id client-secret username password)))
     (if (not (wallabag--error-p token))
         config
       (if (y-or-n-p (format "Error: \"%s\" you like to try again? :"
                             (cadr token)))
           (wallabag--create-wallabag-config
-           (alist-get 'host config)
-           (alist-get 'client-id config)
-           (alist-get 'client-secret config)
-           (alist-get 'username config)
-           password)))))
+           host client-id client-secret username password)))))
 
 (defun wallabag--get-data (filename)
   "Open a json file in the data directory and return the parsed data"
